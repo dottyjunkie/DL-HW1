@@ -97,7 +97,6 @@ class LogisticRegression():
         self.weights = []
         self.maxIter = 2000
         self.stepSize = 0.1
-        self.confusion = []
 
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
@@ -125,25 +124,26 @@ class LogisticRegression():
 
         return self.sigmoid(X * self.weights)
 
-    def confusion_matrix(self, predcited, truth):
-        tp = 0
-        fp = 0
-        tn = 0
-        fn = 0
 
-        for i in range(len(truth)):
-            if truth[i] and predcited[i]:
-                tp += 1
-            elif truth[i] and (not predcited[i]):
-                fn += 1
-            elif (not truth[i]) and predcited[i]:
-                fp += 1
-            elif (not truth[i]) and (not predcited[i]):
-                tn += 1
-        confusion = np.matrix([[tn, fn], [fp, tp]])
-        self.confusion = confusion
-        
-        return confusion
+def confusion_matrix(predcited, truth):
+    tp = 0
+    fp = 0
+    tn = 0
+    fn = 0
+
+    for i in range(len(truth)):
+        if truth[i] and predcited[i]:
+            tp += 1
+        elif truth[i] and (not predcited[i]):
+            fn += 1
+        elif (not truth[i]) and predcited[i]:
+            fp += 1
+        elif (not truth[i]) and (not predcited[i]):
+            tn += 1
+
+    confusion = np.matrix([[tn, fn], [fp, tp]])
+    precision = tp/(tp+fp) if tp+fp!=0 else np.NaN
+    return confusion, precision
 
 
 def train_test_split(raw, task='regression', random_state=42):
@@ -229,6 +229,7 @@ def plot_confusion_matrix(confusion):
                          index=['predict = 0', 'predict = 1'],
                          columns=['true = 0', 'true = 1'])
     sn.heatmap(cm_df, annot=True, fmt="d")
+    plt.show()
 
 
 def Problem1():
@@ -247,7 +248,8 @@ def Problem1():
     lr.fit(X_train, y_train)
     lr_train_score = float(lr.RMSE(X_train, y_train))
     lr_test_score = float(lr.RMSE(X_test, y_test))
-    predicted_G3.append(('({:.3f})Linear Regression'.format(lr_test_score), lr.predict(X_test)))
+    predicted_G3.append(
+        ('({:.3f})Linear Regression'.format(lr_test_score), lr.predict(X_test)))
     # print("Training RMSE:{}".format(lr_train_score))
     # print("Testing RMSE :{}".format(lr_test_score))
     w.append(lr.weights)
@@ -256,7 +258,8 @@ def Problem1():
     lr_reg.fit(X_train, y_train)
     lr_reg_train_score = float(lr_reg.RMSE(X_train, y_train))
     lr_reg_test_score = float(lr_reg.RMSE(X_test, y_test))
-    predicted_G3.append(('({:.3f})Linear Regression (/reg)'.format(lr_reg_test_score), lr_reg.predict(X_test)))
+    predicted_G3.append(
+        ('({:.3f})Linear Regression (/reg)'.format(lr_reg_test_score), lr_reg.predict(X_test)))
     # print("Training RMSE with reg:{}".format(lr_reg_train_score))
     # print("Testing RMSE with reg:{}".format(lr_reg_test_score))
     w.append(lr_reg.weights)
@@ -274,7 +277,8 @@ def Problem1():
     lr_b_reg.fit(X_train, y_train)
     lr_b_reg_train_score = float(lr_b_reg.RMSE(X_train, y_train))
     lr_b_reg_test_score = float(lr_b_reg.RMSE(X_test, y_test))
-    predicted_G3.append(('({:.3f}) Linear Regression (r/b)'.format(lr_b_reg_test_score), lr_b_reg.predict(X_test)))
+    predicted_G3.append(
+        ('({:.3f}) Linear Regression (r/b)'.format(lr_b_reg_test_score), lr_b_reg.predict(X_test)))
     # print("Training RMSE with bias and reg:{}".format(lr_b_reg_train_score))
     # print("Testing RMSE with bias and reg:{}".format(lr_b_reg_test_score))
     w.append(lr_b_reg.weights)
@@ -283,7 +287,8 @@ def Problem1():
     blr.fit(X_train, y_train)
     blr_train_score = float(blr.RMSE(X_train, y_train))
     blr_test_score = float(blr.RMSE(X_test, y_test))
-    predicted_G3.append(('({:.3f}) Bayesian Linear Regression'.format(blr_test_score), blr.predict(X_test)))
+    predicted_G3.append(('({:.3f}) Bayesian Linear Regression'.format(
+        blr_test_score), blr.predict(X_test)))
     # print("Training RMSE with Bayesian LR:{}".format(blr_train_score))
     # print("Testing RMSE with Bayesian LR:{}".format(blr_test_score))
     # w.append(blr.weights)
@@ -296,20 +301,28 @@ def Problem2():
     raw = pd.read_csv('train.csv')
     X_train, X_test, y_train, y_test = train_test_split(
         raw, task='classification')
-
-    lr_b_reg = LinearRegression(isBias=True, isReg=True)
-    lr_b_reg.fit(X_train, y_train)
-    predict_label = lr_b_reg.predict(X_train)
-    thres = [0.1, 0.5, 0.9]
-    quantized_label = quantize(predict_label)
+    lr = LinearRegression(isBias=True, isReg=True)
+    lr.fit(X_train, y_train)
 
     logiR = LogisticRegression()
     logiR.fit(X_train, y_train)
-    # predict_label = quantize(logiR.predict(X_train))
-    # print(predict_label.shape)
-    # logiR.confusion_matrix(predict_label, quantized_label)
-    confusion = logiR.confusion_matrix(predict_label, quantized_label)
-    plot_confusion_matrix(confusion)
+
+    threshold = [0.1, 0.5, 0.9]
+    precision = np.zeros([2, 3])
+
+    for idx, thres in enumerate(threshold):
+        lr_predict = quantize(lr.predict(X_test), thres=thres)
+        lr_cm, lr_precision = confusion_matrix(lr_predict, y_test.values)
+        # plot_confusion_matrix(lr_cm)
+        precision[0][idx] = lr_precision
+
+        logiR_predict = quantize(logiR.predict(X_test), thres=thres)
+        logiR_cm, logiR_precison = confusion_matrix(logiR_predict, y_test.values)
+        # plot_confusion_matrix(logiR_cm)
+        precision[1][idx] = logiR_precison
+
+    print(precision)
+
 
 if __name__ == "__main__":
     # Problem1()
