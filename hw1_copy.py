@@ -353,25 +353,31 @@ def Problem3():
     to_be_predicted = get_entries(pd.read_csv('test_no_G3.csv'))
     raw = pd.read_csv('train.csv')
 
-    # X_train, X_test, y_train, y_test = train_test_split(raw, task='regression')
-    # lr = LinearRegression(isBias=True, isReg=True, regLambda=0.05)
-    # lr.fit(X_train, y_train)
-    # lr_train_score = float(lr.RMSE(X_train, y_train))
-    # lr_test_score = float(lr.RMSE(X_test, y_test))
-    # print("Training RMSE with bias and reg:{}".format(lr_train_score))
-    # print("Testing RMSE with bias and reg:{}".format(lr_test_score))
-    # predict = lr.predict(to_be_predicted)
-    # for idx, value in enumerate(np.array(predict)):
-    #     print("{}\t{}".format(1001+idx, value[0]))
+    X_train, X_test, y_train, y_test = train_test_split(raw, task='regression')
+    lr = LinearRegression(isBias=True, isReg=True, regLambda=0.05)
+    lr.fit(X_train, y_train)
+    lr_train_score = float(lr.RMSE(X_train, y_train))
+    lr_test_score = float(lr.RMSE(X_test, y_test))
+    print("Training RMSE with bias and reg:{}".format(lr_train_score))
+    print("Testing RMSE with bias and reg:{}".format(lr_test_score))
+    predict = lr.predict(to_be_predicted)
+    f = open('1.txt', 'w')
+    for idx, value in enumerate(np.array(predict)):
+        # print("{}\t{}".format(1001+idx, value[0]))
+        f.write("{}\t{}\n".format(1001+idx, value[0]))
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        raw, task='classification')
-    logiR = LogisticRegression()
-    logiR.fit(X_train, y_train)
-    logiR_predict = quantize(logiR.predict(to_be_predicted), thres=0.45)
-    for idx, value in enumerate(logiR_predict):
-        print("{}\t{}".format(1001+idx, value))
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     raw, task='classification')
+    # logiR = LogisticRegression()
+    # logiR.fit(X_train, y_train)
+    # logiR_predict = quantize(logiR.predict(to_be_predicted), thres=0.45)
 
+    # f = open('2.txt', 'w')
+    # for idx, value in enumerate(logiR_predict):
+    #     # print("{}\t{}".format(1001+idx, value))
+    #     f.write("{}\t{}\n".format(1001+idx, value))
+
+    """Test hyper-parameter
     # threshold = np.arange(0.2, 0.7, .01)
     # threshold = [0.1,0.5,0.9]
     # for idx, thres in enumerate(threshold):
@@ -379,7 +385,7 @@ def Problem3():
     #     logiR_cm, logiR_precison, logiR_accuracy = evaluate(logiR_predict, y_test.values)
     #     # plot_confusion_matrix(logiR_cm, "Logistic Regression with threshold {}".format(thres))
     #     print("thres={:.3f}, prec={:.3f}, acc={:.3f}".format(thres, logiR_precison, logiR_accuracy))
-
+    """
 
 if __name__ == "__main__":
     # Problem1()
