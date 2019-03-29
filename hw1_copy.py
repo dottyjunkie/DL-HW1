@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sn
 
+
 class LinearRegression():
+
     def __init__(self, isBias=False, isReg=False, regLambda=1.0):
         self.isBias = isBias
         self.isReg = isReg
@@ -21,14 +23,13 @@ class LinearRegression():
         y = np.asmatrix(targets.values)
 
         if self.isReg:
-            tmp = (X.T * X)  + rows/2*self.regLambda * np.eye(X.shape[1])
-            weights = np.linalg.inv( tmp )* X.T * y
+            tmp = (X.T * X) + rows / 2 * self.regLambda * np.eye(X.shape[1])
+            weights = np.linalg.inv(tmp) * X.T * y
         else:
             weights = np.linalg.pinv(X) * y
 
         self.weights = weights
-        
-        
+
     def RMSE(self, predictors, targets):
         rows, _ = predictors.shape
         if self.isBias:
@@ -50,7 +51,9 @@ class LinearRegression():
             X = np.asmatrix(X.values)
         return X * self.weights
 
+
 class BayesianLinearRegression():
+
     def __init__(self, alpha=1.0):
         self.isBias = True
         self.alpha = alpha
@@ -61,10 +64,10 @@ class BayesianLinearRegression():
         X = np.asmatrix(np.c_[predictors.values, np.ones([rows, 1])])
         y = np.asmatrix(targets.values)
 
-        gamma_0_inv = np.linalg.inv(1/self.alpha * np.eye(cols+1))       
+        gamma_0_inv = np.linalg.inv(1 / self.alpha * np.eye(cols + 1))
         gamma_m = np.linalg.pinv(X.T * X + gamma_0_inv)
 
-        mu_0 = np.asmatrix(0.0 * np.ones([cols+1, 1]))
+        mu_0 = np.asmatrix(0.0 * np.ones([cols + 1, 1]))
         mu_m = gamma_m * (X.T * y + gamma_0_inv * mu_0)
 
         self.weights = mu_m
@@ -87,7 +90,9 @@ class BayesianLinearRegression():
             X = np.asmatrix(X.values)
         return X * self.weights
 
+
 class LogisticRegression():
+
     def __init__(self):
         self.weights = []
         self.maxIter = 2000
@@ -106,14 +111,14 @@ class LogisticRegression():
         residue = []
 
         for i in range(self.maxIter):
-            grad = (1/rows) * X.T * self.sigmoid(X *weights - y)
+            grad = (1 / rows) * X.T * self.sigmoid(X * weights - y)
             weights = weights - self.stepSize * grad
             residue.append(np.linalg.norm(prev_weights - weights))
             prev_weights = weights
-        
+
         # plt.plot(range(len(residue)), residue)
         self.weights = weights
-    
+
     def predict(self, predictors):
         # rows, cols = predictors.shape
         X = np.asmatrix(predictors.values)
@@ -121,11 +126,11 @@ class LogisticRegression():
         return self.sigmoid(X * self.weights)
 
     def confusion_matrix(self, predcited, truth):
-        tp = 0;
-        fp = 0;
-        tn = 0;
-        fn = 0;
-        
+        tp = 0
+        fp = 0
+        tn = 0
+        fn = 0
+
         for i in range(len(truth)):
             if truth[i] and predcited[i]:
                 tp += 1
@@ -137,8 +142,9 @@ class LogisticRegression():
                 tn += 1
         confusion = np.matrix([[tn, fn], [fp, tp]])
         self.confusion = confusion
-        plot_confusion_matrix(confusion)
+        
         return confusion
+
 
 def train_test_split(raw, task='regression', random_state=42):
     """
@@ -147,13 +153,14 @@ def train_test_split(raw, task='regression', random_state=42):
     Returns:
     """
     entries = ['school', 'sex', 'age', 'famsize', 'studytime', 'failures', 'activities',
-                'higher', 'internet', 'romantic', 'famrel', 'freetime', 'goout', 'Dalc',
-                'Walc', 'health', 'absences', 'G3']
-    
+               'higher', 'internet', 'romantic', 'famrel', 'freetime', 'goout', 'Dalc',
+               'Walc', 'health', 'absences', 'G3']
+
     want = raw[entries]
 
     if task == 'classification':
-        want[['G3']] = want[['G3']].apply(lambda x: [1 if y >= 10 else 0 for y in x])
+        want[['G3']] = want[['G3']].apply(
+            lambda x: [1 if y >= 10 else 0 for y in x])
 
     one_hot = pd.get_dummies(want)
 
@@ -169,6 +176,7 @@ def train_test_split(raw, task='regression', random_state=42):
 
     return (X_train, X_test, y_train, y_test)
 
+
 def quantize(raw, thres=0.5):
     """
     Parameters:
@@ -177,8 +185,9 @@ def quantize(raw, thres=0.5):
     """
     arr = np.asarray(raw).reshape(-1)
     for idx, val in enumerate(arr):
-        arr[idx] = 1 if val>=thres else 0
+        arr[idx] = 1 if val >= thres else 0
     return arr
+
 
 def plot_weights(weights=[]):
     """
@@ -189,6 +198,8 @@ def plot_weights(weights=[]):
     print(len(weights))
     for w in weights:
         plt.plot(range(len(w)), np.abs(w))
+    plt.show()
+
 
 def plot_G3(truth, predicted, n=300):
     """
@@ -205,6 +216,8 @@ def plot_G3(truth, predicted, n=300):
     plt.ylabel("Values")
     plt.legend(loc='lower right', prop={'size': 6})
     plt.grid()
+    plt.show()
+
 
 def plot_confusion_matrix(confusion):
     """
@@ -213,9 +226,10 @@ def plot_confusion_matrix(confusion):
     Returns:
     """
     cm_df = pd.DataFrame(confusion,
-                        index = ['predict = 0','predict = 1'], 
-                        columns = ['true = 0','true = 1'])
+                         index=['predict = 0', 'predict = 1'],
+                         columns=['true = 0', 'true = 1'])
     sn.heatmap(cm_df, annot=True, fmt="d")
+
 
 def Problem1():
     """
@@ -231,16 +245,20 @@ def Problem1():
 
     lr = LinearRegression(isBias=False)
     lr.fit(X_train, y_train)
-    print("Training RMSE:{}".format(float(lr.RMSE(X_train, y_train))))
-    print("Testing RMSE :{}".format(float(lr.RMSE(X_test, y_test))))
-    predicted_G3.append( ('Linear Regression', lr.predict(X_test)) )
+    lr_train_score = float(lr.RMSE(X_train, y_train))
+    lr_test_score = float(lr.RMSE(X_test, y_test))
+    predicted_G3.append(('({:.3f})Linear Regression'.format(lr_test_score), lr.predict(X_test)))
+    # print("Training RMSE:{}".format(lr_train_score))
+    # print("Testing RMSE :{}".format(lr_test_score))
     w.append(lr.weights)
 
     lr_reg = LinearRegression(isBias=False, isReg=True)
     lr_reg.fit(X_train, y_train)
-    print("Training RMSE with reg:{}".format(float(lr_reg.RMSE(X_train, y_train))))
-    print("Testing RMSE with reg:{}".format(float(lr_reg.RMSE(X_test, y_test))))
-    predicted_G3.append( ('Linear Regression (/reg)', lr_reg.predict(X_test)) )
+    lr_reg_train_score = float(lr_reg.RMSE(X_train, y_train))
+    lr_reg_test_score = float(lr_reg.RMSE(X_test, y_test))
+    predicted_G3.append(('({:.3f})Linear Regression (/reg)'.format(lr_reg_test_score), lr_reg.predict(X_test)))
+    # print("Training RMSE with reg:{}".format(lr_reg_train_score))
+    # print("Testing RMSE with reg:{}".format(lr_reg_test_score))
     w.append(lr_reg.weights)
 
     """
@@ -254,24 +272,30 @@ def Problem1():
 
     lr_b_reg = LinearRegression(isBias=True, isReg=True)
     lr_b_reg.fit(X_train, y_train)
-    print("Training RMSE with bias and reg:{}".format(float(lr_b_reg.RMSE(X_train, y_train))))
-    print("Testing RMSE with bias and reg:{}".format(float(lr_b_reg.RMSE(X_test, y_test))))
-    predicted_G3.append( ('Linear Regression (r/b)', lr_b_reg.predict(X_test)) )
+    lr_b_reg_train_score = float(lr_b_reg.RMSE(X_train, y_train))
+    lr_b_reg_test_score = float(lr_b_reg.RMSE(X_test, y_test))
+    predicted_G3.append(('({:.3f}) Linear Regression (r/b)'.format(lr_b_reg_test_score), lr_b_reg.predict(X_test)))
+    # print("Training RMSE with bias and reg:{}".format(lr_b_reg_train_score))
+    # print("Testing RMSE with bias and reg:{}".format(lr_b_reg_test_score))
     w.append(lr_b_reg.weights)
-    
+
     blr = BayesianLinearRegression()
     blr.fit(X_train, y_train)
-    print("Training RMSE with Bayesian LR:{}".format(float(blr.RMSE(X_train, y_train))))
-    print("Testing RMSE with Bayesian LR:{}".format(float(blr.RMSE(X_test, y_test))))
-    predicted_G3.append( ('Bayesian Linear Regression', blr.predict(X_test)) )
+    blr_train_score = float(blr.RMSE(X_train, y_train))
+    blr_test_score = float(blr.RMSE(X_test, y_test))
+    predicted_G3.append(('({:.3f}) Bayesian Linear Regression'.format(blr_test_score), blr.predict(X_test)))
+    # print("Training RMSE with Bayesian LR:{}".format(blr_train_score))
+    # print("Testing RMSE with Bayesian LR:{}".format(blr_test_score))
     # w.append(blr.weights)
-    
-    # plot_G3(y_test, predicted_G3)
-    plot_weights(w)
+
+    plot_G3(y_test, predicted_G3)
+    # plot_weights(w)
+
 
 def Problem2():
     raw = pd.read_csv('train.csv')
-    X_train, X_test, y_train, y_test = train_test_split(raw, task='classification')
+    X_train, X_test, y_train, y_test = train_test_split(
+        raw, task='classification')
 
     lr_b_reg = LinearRegression(isBias=True, isReg=True)
     lr_b_reg.fit(X_train, y_train)
@@ -279,15 +303,15 @@ def Problem2():
     thres = [0.1, 0.5, 0.9]
     quantized_label = quantize(predict_label)
 
-
     logiR = LogisticRegression()
     logiR.fit(X_train, y_train)
     # predict_label = quantize(logiR.predict(X_train))
     # print(predict_label.shape)
     # logiR.confusion_matrix(predict_label, quantized_label)
-    logiR.confusion_matrix(predict_label, quantized_label)
+    confusion = logiR.confusion_matrix(predict_label, quantized_label)
+    plot_confusion_matrix(confusion)
 
 if __name__ == "__main__":
-    Problem1()
-    # Problem2()
+    # Problem1()
+    Problem2()
     pass
