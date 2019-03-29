@@ -125,7 +125,12 @@ class LogisticRegression():
         return self.sigmoid(X * self.weights)
 
 
-def confusion_matrix(predcited, truth):
+def evaluate(predcited, truth):
+    """
+    Parameters:
+
+    Returns:
+    """
     tp = 0
     fp = 0
     tn = 0
@@ -141,9 +146,26 @@ def confusion_matrix(predcited, truth):
         elif (not truth[i]) and (not predcited[i]):
             tn += 1
 
-    confusion = np.matrix([[tn, fn], [fp, tp]])
-    precision = tp/(tp+fp) if tp+fp!=0 else np.NaN
-    return confusion, precision
+    confusion_matrix = np.matrix([[tn, fn], [fp, tp]])
+
+    precision = tp / (tp + fp) if tp + fp != 0 else np.NaN
+    accuracy = (tp+tn) / (tp+fn+tn+fp)
+    return confusion_matrix, precision, accuracy
+
+
+def get_entries(raw):
+    """
+    Parameters:
+
+    Returns:
+    """
+    entries = ['school', 'sex', 'age', 'famsize', 'studytime', 'failures', 'activities',
+               'higher', 'internet', 'romantic', 'famrel', 'freetime', 'goout', 'Dalc',
+               'Walc', 'health', 'absences']
+
+    want = raw[entries]
+    one_hot = pd.get_dummies(want)
+    return one_hot
 
 
 def train_test_split(raw, task='regression', random_state=42):
@@ -219,7 +241,7 @@ def plot_G3(truth, predicted, n=300):
     plt.show()
 
 
-def plot_confusion_matrix(confusion):
+def plot_confusion_matrix(confusion, title):
     """
     Parameters:
 
@@ -228,7 +250,9 @@ def plot_confusion_matrix(confusion):
     cm_df = pd.DataFrame(confusion,
                          index=['predict = 0', 'predict = 1'],
                          columns=['true = 0', 'true = 1'])
-    sn.heatmap(cm_df, annot=True, fmt="d")
+    ax = plt.axes()
+    sn.heatmap(cm_df, annot=True, fmt="d", ax=ax)
+    ax.set_title(title)
     plt.show()
 
 
@@ -239,8 +263,8 @@ def Problem1():
     Returns:
     """
     raw = pd.read_csv('train.csv')
-
     X_train, X_test, y_train, y_test = train_test_split(raw, task='regression')
+
     predicted_G3 = []
     w = []
 
@@ -312,19 +336,53 @@ def Problem2():
 
     for idx, thres in enumerate(threshold):
         lr_predict = quantize(lr.predict(X_test), thres=thres)
-        lr_cm, lr_precision = confusion_matrix(lr_predict, y_test.values)
-        # plot_confusion_matrix(lr_cm)
+        lr_cm, lr_precision, _ = evaluate(lr_predict, y_test.values)
+        # plot_confusion_matrix(lr_cm, "Linear Regression with threshold {}".format(thres))
         precision[0][idx] = lr_precision
 
         logiR_predict = quantize(logiR.predict(X_test), thres=thres)
-        logiR_cm, logiR_precison = confusion_matrix(logiR_predict, y_test.values)
-        # plot_confusion_matrix(logiR_cm)
+        logiR_cm, logiR_precison, _ = evaluate(
+            logiR_predict, y_test.values)
+        # plot_confusion_matrix(logiR_cm, "Logistic Regression with threshold {}".format(thres))
         precision[1][idx] = logiR_precison
 
-    print(precision)
+    # print(precision)
+
+
+def Problem3():
+    to_be_predicted = get_entries(pd.read_csv('test_no_G3.csv'))
+    raw = pd.read_csv('train.csv')
+
+    # X_train, X_test, y_train, y_test = train_test_split(raw, task='regression')
+    # lr = LinearRegression(isBias=True, isReg=True, regLambda=0.05)
+    # lr.fit(X_train, y_train)
+    # lr_train_score = float(lr.RMSE(X_train, y_train))
+    # lr_test_score = float(lr.RMSE(X_test, y_test))
+    # print("Training RMSE with bias and reg:{}".format(lr_train_score))
+    # print("Testing RMSE with bias and reg:{}".format(lr_test_score))
+    # predict = lr.predict(to_be_predicted)
+    # for idx, value in enumerate(np.array(predict)):
+    #     print("{}\t{}".format(1001+idx, value[0]))
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        raw, task='classification')
+    logiR = LogisticRegression()
+    logiR.fit(X_train, y_train)
+    logiR_predict = quantize(logiR.predict(to_be_predicted), thres=0.45)
+    for idx, value in enumerate(logiR_predict):
+        print("{}\t{}".format(1001+idx, value))
+
+    # threshold = np.arange(0.2, 0.7, .01)
+    # threshold = [0.1,0.5,0.9]
+    # for idx, thres in enumerate(threshold):
+    #     logiR_predict = quantize(logiR.predict(X_test), thres=thres)
+    #     logiR_cm, logiR_precison, logiR_accuracy = evaluate(logiR_predict, y_test.values)
+    #     # plot_confusion_matrix(logiR_cm, "Logistic Regression with threshold {}".format(thres))
+    #     print("thres={:.3f}, prec={:.3f}, acc={:.3f}".format(thres, logiR_precison, logiR_accuracy))
 
 
 if __name__ == "__main__":
     # Problem1()
-    Problem2()
+    # Problem2()
+    Problem3()
     pass
